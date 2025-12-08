@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -165,6 +165,24 @@ vim.o.scrolloff = 10
 -- instead raise a dialog asking if you wish to save the current file(s)
 -- See `:help 'confirm'`
 vim.o.confirm = true
+
+-- NOTE: Handle line numbers
+vim.opt.number = true -- shows the current line number
+vim.opt.relativenumber = true -- shows relative numbers for all other lines
+-- Enable relative numbers in normal mode, disable in insert mode
+vim.api.nvim_create_autocmd({ 'InsertEnter' }, {
+  pattern = '*',
+  callback = function()
+    vim.opt.relativenumber = false
+  end,
+})
+
+vim.api.nvim_create_autocmd({ 'InsertLeave' }, {
+  pattern = '*',
+  callback = function()
+    vim.opt.relativenumber = true
+  end,
+})
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
