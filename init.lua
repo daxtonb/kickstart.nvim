@@ -1060,18 +1060,6 @@ require('lazy').setup({
     },
     lazy = false, -- neo-tree will lazily load itself
   },
-
-  {
-    'mfussenegger/nvim-dap',
-  },
-
-  {
-    'rcarriga/nvim-dap-ui',
-    dependencies = { 'mfussenegger/nvim-dap' },
-    config = function()
-      require('dapui').setup()
-    end,
-  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
