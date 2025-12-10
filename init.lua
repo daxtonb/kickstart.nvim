@@ -461,6 +461,12 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
+      -- Tab navigation
+      vim.keymap.set('n', '<leader>tn', ':tabnew<CR>', { desc = 'New tab' })
+      vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = 'Close tab' })
+      vim.keymap.set('n', '<leader>tl', ':tabnext<CR>', { desc = 'Next tab' })
+      vim.keymap.set('n', '<leader>th', ':tabprevious<CR>', { desc = 'Prev tab' })
+
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
@@ -506,9 +512,53 @@ require('lazy').setup({
       -- Automatically install LSPs and related tools to stdpath for Neovim
       -- Mason must be loaded before its dependents so we need to set it up here.
       -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-      { 'mason-org/mason.nvim', opts = {} },
+
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
+
+      {
+        'williamboman/mason.nvim',
+        opts = {
+          registries = {
+            'github:mason-org/mason-registry',
+            'github:Crashdummyy/mason-registry',
+          },
+          ensure_installed = {
+            'lua-language-server',
+
+            'xmlformatter',
+            'csharpier',
+            'prettier',
+
+            'stylua',
+            'bicep-lsp',
+            'html-lsp',
+            'css-lsp',
+            'eslint-lsp',
+            'typescript-language-server',
+            'json-lsp',
+            'rust-analyzer',
+
+            -- !
+            'roslyn',
+            'netcoredbg',
+            'terraform-ls',
+            'tflint',
+            -- "csharp-language-server",
+            -- "omnisharp",
+          },
+        },
+      },
+
+      {
+        'seblyng/roslyn.nvim',
+        ---@module 'roslyn.config'
+        ---@type RoslynNvimConfig
+        ft = { 'cs', 'razor' },
+        opts = {
+          -- your configuration comes here; leave empty for default settings
+        },
+      },
 
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
@@ -647,6 +697,14 @@ require('lazy').setup({
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
           end
+
+          -- C#
+          vim.lsp.config('roslyn', {})
+          require('neotest').setup {
+            adapters = {
+              require 'neotest-dotnet',
+            },
+          }
         end,
       })
 
@@ -722,7 +780,6 @@ require('lazy').setup({
             },
           },
         },
-        csharp_ls = {},
         pyright = {},
       }
 
@@ -1000,7 +1057,7 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
@@ -1059,6 +1116,59 @@ require('lazy').setup({
       'nvim-tree/nvim-web-devicons', -- optional, but recommended
     },
     lazy = false, -- neo-tree will lazily load itself
+  },
+
+  {
+    -- Debug Framework
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+    },
+    config = function()
+      require 'configs.nvim-dap'
+    end,
+    event = 'VeryLazy',
+  },
+  { 'nvim-neotest/nvim-nio' },
+  {
+    -- UI for debugging
+    'rcarriga/nvim-dap-ui',
+    dependencies = {
+      'mfussenegger/nvim-dap',
+    },
+    config = function()
+      require 'configs.nvim-dap-ui'
+    end,
+  },
+  {
+    'nvim-neotest/neotest',
+    requires = {
+      {
+        'Issafalcon/neotest-dotnet',
+      },
+    },
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'nvim-lua/plenary.nvim',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-treesitter/nvim-treesitter',
+    },
+  },
+  {
+    'Issafalcon/neotest-dotnet',
+    lazy = false,
+    dependencies = {
+      'nvim-neotest/neotest',
+    },
+  },
+
+  { 'github/copilot.vim' },
+
+  {
+    'rmagatti/auto-session',
+    config = function()
+      require('auto-session').setup()
+    end,
   },
 }, {
   ui = {
