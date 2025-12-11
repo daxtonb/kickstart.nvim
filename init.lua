@@ -169,6 +169,17 @@ vim.o.confirm = true
 -- NOTE: Handle line numbers
 vim.opt.number = true -- shows the current line number
 vim.opt.relativenumber = true -- shows relative numbers for all other lines
+
+--NOTE: Language-specific indentation settings
+vim.api.nvim_create_autocmd({ 'FileType' }, {
+  pattern = { 'cs' },
+  callback = function()
+    vim.bo.shiftwidth = 4
+    vim.bo.tabstop = 4
+    vim.bo.expandtab = true
+  end,
+})
+
 -- Enable relative numbers in normal mode, disable in insert mode
 vim.api.nvim_create_autocmd({ 'InsertEnter' }, {
   pattern = '*',
@@ -177,12 +188,35 @@ vim.api.nvim_create_autocmd({ 'InsertEnter' }, {
   end,
 })
 
-vim.api.nvim_create_autocmd({ 'InsertLeave' }, {
+-- Auto-save
+vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
   pattern = '*',
   callback = function()
-    vim.opt.relativenumber = true
+    local buf = vim.api.nvim_get_current_buf()
+    local name = vim.api.nvim_buf_get_name(buf)
+
+    if
+      vim.bo[buf].modified -- buffer has unsaved changes
+      and name ~= '' -- not an unnamed buffer
+      and vim.bo[buf].buftype == '' -- normal file, not help/quickfix/etc
+      and not vim.bo[buf].readonly -- don’t try to write readonly files
+    then
+      vim.cmd 'silent write'
+    end
   end,
 })
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  pattern = '*',
+  command = 'if mode() != "c" | checktime | endif',
+})
+vim.api.nvim_create_autocmd('FileChangedShellPost', {
+  pattern = '*',
+  callback = function()
+    vim.notify('File changed on disk and reloaded', vim.log.levels.WARN)
+  end,
+})
+vim.keymap.set('n', '<leader>rr', '<cmd>checktime<CR>', { desc = 'Reload file if changed on disk' }) -- Force a bufer reload
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -1085,6 +1119,9 @@ require('lazy').setup({
       'nvim-telescope/telescope.nvim',
       'nvim-tree/nvim-web-devicons',
     },
+    keys = {
+      { '<leader>go', '<cmd>Octo<cr>', desc = 'Open Octo.nvim' },
+    },
   },
 
   {
@@ -1114,6 +1151,15 @@ require('lazy').setup({
       'nvim-lua/plenary.nvim',
       'MunifTanjim/nui.nvim',
       'nvim-tree/nvim-web-devicons', -- optional, but recommended
+    },
+    opts = {
+      filesystem = {
+        filtered_items = {
+          visible = true, -- This will show hidden files
+          hide_dotfiles = false,
+          hide_gitignored = false,
+        },
+      },
     },
     lazy = false, -- neo-tree will lazily load itself
   },
