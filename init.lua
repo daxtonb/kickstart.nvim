@@ -102,7 +102,7 @@ vim.g.have_nerd_font = true
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -166,10 +166,6 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
--- NOTE: Handle line numbers
-vim.opt.number = true -- shows the current line number
-vim.opt.relativenumber = true -- shows relative numbers for all other lines
-
 --NOTE: Language-specific indentation settings
 vim.api.nvim_create_autocmd({ 'FileType' }, {
   pattern = { 'cs' },
@@ -187,9 +183,15 @@ vim.api.nvim_create_autocmd({ 'InsertEnter' }, {
     vim.opt.relativenumber = false
   end,
 })
+vim.api.nvim_create_autocmd({ 'InsertLeave' }, {
+  pattern = '*',
+  callback = function()
+    vim.opt.relativenumber = true
+  end,
+})
 
 -- Auto-save
-vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
+vim.api.nvim_create_autocmd({ 'TextChanged' }, {
   pattern = '*',
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
@@ -250,9 +252,11 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set('n', '<leader>wv', '<C-w>v', { desc = 'New [W]indow–[V]ertical split' })
+vim.keymap.set('n', '<leader>wh', '<C-w>n', { desc = 'New [W]indow–[H]orizontal split' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
--- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
+-- vim.keymap.set("", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
@@ -333,6 +337,23 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+    },
+  },
+  {
+    'f-person/git-blame.nvim',
+    -- load the plugin at startup
+    event = 'VeryLazy',
+    -- Because of the keys part, you will be lazy loading this plugin.
+    -- The plugin will only load once one of the keys is used.
+    -- If you want to load the plugin at startup, add something like event = "VeryLazy",
+    -- or lazy = false. One of both options will work.
+    opts = {
+      -- your configuration comes here
+      -- for example
+      enabled = true, -- if you want to enable the plugin
+      message_template = '\t\t<date> • <author> • <summary> • <<sha>>', -- template for the blame message, check the Message template section for more options
+      date_format = '%Y-%m-%d %H:%M:%S', -- template for the date, check Date format section for more options
+      virtual_text_column = 1, -- virtual text start column, check Start virtual text at column section for more options
     },
   },
   {
@@ -1133,6 +1154,9 @@ require('lazy').setup({
           require('litee.lib').setup()
         end,
       },
+    },
+    keys = {
+      { '<leader>gh', '<cmd>GH<cr>', desc = 'Open gh.nvim' },
     },
     config = function()
       require('litee.gh').setup()
