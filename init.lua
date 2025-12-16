@@ -191,7 +191,7 @@ vim.api.nvim_create_autocmd({ 'InsertLeave' }, {
 })
 
 -- Auto-save
-vim.api.nvim_create_autocmd({ 'TextChanged' }, {
+vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
   pattern = '*',
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
@@ -1166,6 +1166,10 @@ require('lazy').setup({
   {
     'sindrets/diffview.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      { '<leader>dvh', '<cmd>DiffviewOpen HEAD<cr>', desc = 'Open [D]iff[V]iew [H]EAD' },
+      { '<leader>dvm', '<cmd>DiffviewOpen origin/master<cr>', desc = 'Open [D]iff[V]iew [M]aster' },
+    },
   },
 
   {
