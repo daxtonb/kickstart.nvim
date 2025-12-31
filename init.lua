@@ -116,6 +116,23 @@ vim.o.showmode = false
 --  See `:help 'clipboard'`
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
+  if vim.fn.has 'wsl' then
+    vim.g.clipboard = {
+      name = 'win_clipboard',
+      copy = {
+        ['+'] = 'clip.exe',
+        ['*'] = 'clip.exe',
+      },
+      paste = {
+        ['+'] = 'powershell.exe Get-Clipboard',
+        ['*'] = 'powershell.exe Get-Clipboard',
+      },
+      cache_enabled = 0,
+    }
+
+    -- vim.keymap.set({"n", "v"}, "y", '"+y', { noremap = true, silent = true })
+    -- vim.keymap.set({"n", "v"}, "p", '"+p', { noremap = true, silent = true })
+  end
 end)
 
 -- Enable break indent
@@ -220,6 +237,14 @@ vim.api.nvim_create_autocmd('FileChangedShellPost', {
 })
 vim.keymap.set('n', '<leader>rr', '<cmd>checktime<CR>', { desc = 'Reload file if changed on disk' }) -- Force a bufer reload
 
+-- Format on save
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*',
+  callback = function()
+    require('conform').format { timeout_ms = 2000 }
+  end,
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -289,6 +314,10 @@ end
 ---@type vim.Option
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
+
+-- Spell checking
+vim.o.spell = true
+vim.o.spelllang = 'en_us'
 
 -- [[ Configure and install plugins ]]
 --
@@ -907,10 +936,11 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        python = { 'autopep8', 'isort', 'black' },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        terraform = { 'terraform_fmt' },
       },
     },
   },
