@@ -218,7 +218,8 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
       vim.bo[buf].modified -- buffer has unsaved changes
       and name ~= '' -- not an unnamed buffer
       and vim.bo[buf].buftype == '' -- normal file, not help/quickfix/etc
-      and not vim.bo[buf].readonly -- don’t try to write readonly files
+      and not vim.bo[buf].readonly -- don't try to write readonly files
+      and vim.fn.filewritable(name) ~= 0 -- file is writable
     then
       vim.cmd 'silent write'
     end
@@ -279,6 +280,32 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 vim.keymap.set('n', '<leader>wv', '<C-w>v', { desc = 'New [W]indow–[V]ertical split' })
 vim.keymap.set('n', '<leader>wh', '<C-w>n', { desc = 'New [W]indow–[H]orizontal split' })
+
+-- Reusable terminal shortcut
+local term_buf = nil
+
+vim.keymap.set('n', '<C-t>', function()
+  if term_buf and vim.api.nvim_buf_is_valid(term_buf) then
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_buf(win) == term_buf then
+        vim.api.nvim_win_close(win, true)
+        return
+      end
+    end
+  end
+
+  vim.cmd 'botright split | resize 15 | terminal'
+  term_buf = vim.api.nvim_get_current_buf()
+end, { desc = 'Toggle terminal' })
+
+-- Start terminal in insert mode
+vim.api.nvim_create_autocmd('TermOpen', {
+  pattern = '*',
+  command = 'startinsert',
+})
+
+-- Exit terminal mode with Esc
+vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], { desc = 'Exit terminal mode' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -1110,8 +1137,8 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
-    -- Treesitter uses the `configs` entrypoint for setup.
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    -- Treesitter uses the `config` entrypoint for setup.
+    main = 'nvim-treesitter.config', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'c_sharp' },
