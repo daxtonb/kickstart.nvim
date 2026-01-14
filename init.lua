@@ -656,6 +656,7 @@ require('lazy').setup({
             'netcoredbg',
             'terraform-ls',
             'tflint',
+            'pyright',
             -- "csharp-language-server",
             -- "omnisharp",
           },
@@ -805,18 +806,20 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
+            map('<leader>h', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
+            end, 'Toggle Inlay [H]ints')
           end
 
           -- C#
-          vim.lsp.config('roslyn', {})
-          require('neotest').setup {
-            adapters = {
-              require 'neotest-dotnet',
-            },
-          }
+          if client and client.name == 'roslyn' then
+            vim.lsp.config('roslyn', {})
+            require('neotest').setup {
+              adapters = {
+                require 'neotest-dotnet',
+              },
+            }
+          end
         end,
       })
 
