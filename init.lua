@@ -116,7 +116,7 @@ vim.o.showmode = false
 --  See `:help 'clipboard'`
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
-  if vim.fn.has 'wsl' then
+  if vim.fn.has('wsl') == 1 and vim.fn.executable('clip.exe') == 1 then
     vim.g.clipboard = {
       name = 'win_clipboard',
       copy = {
@@ -130,8 +130,9 @@ vim.schedule(function()
       cache_enabled = 0,
     }
 
-    -- vim.keymap.set({"n", "v"}, "y", '"+y', { noremap = true, silent = true })
-    -- vim.keymap.set({"n", "v"}, "p", '"+p', { noremap = true, silent = true })
+  else
+    -- Default to system clipboard for non-WSL environments
+    vim.g.clipboard = nil
   end
 end)
 
