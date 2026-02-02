@@ -1,60 +1,53 @@
-local dap = require 'dap'
+local dap = require("dap")
 
-local mason_path = vim.fn.stdpath 'data' .. '/mason/packages/netcoredbg/netcoredbg'
+-- Mason installs binaries here (works on Linux/macOS/WSL)
+local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
 
-local netcoredbg_adapter = {
-  type = 'executable',
-  command = mason_path,
-  args = { '--interpreter=vscode' },
+-- netcoredbg adapter (CoreCLR)
+dap.adapters.coreclr = {
+  type = "executable",
+  command = mason_bin .. "/netcoredbg",
+  args = { "--interpreter=vscode" },
 }
 
-dap.adapters.netcoredbg = netcoredbg_adapter -- needed for normal debugging
-dap.adapters.coreclr = netcoredbg_adapter -- needed for unit test debugging
+-- Helper: try to guess the Debug/net8.0 dll, but still let you choose
+local function pick_dll()
+  local cwd = vim.fn.getcwd()
+
+  -- If you're in a project folder, this often exists:
+  -- <project>/bin/Debug/net8.0/<project>.dll
+  -- But solutions vary, so we prompt.
+  return vim.fn.input("Path to dll: ", cwd .. "/bin/Debug/net8.0/", "file")
+end
 
 dap.configurations.cs = {
   {
-    type = 'coreclr',
-    name = 'launch - netcoredbg',
-    request = 'launch',
-    program = function()
-      -- return vim.fn.input("Path to dll: ", vim.fn.getcwd() .. "/src/", "file")
-      return vim.fn.input('Path to dll: ', vim.fn.getcwd() .. '/bin/Debug/net8.0/', 'file')
-    end,
-
-    -- justMyCode = false,
-    -- stopAtEntry = false,
-    -- -- program = function()
-    -- --   -- todo: request input from ui
-    -- --   return "/path/to/your.dll"
-    -- -- end,
-    -- env = {
-    --   ASPNETCORE_ENVIRONMENT = function()
-    --     -- todo: request input from ui
-    --     return "Development"
-    --   end,
-    --   ASPNETCORE_URLS = function()
-    --     -- todo: request input from ui
-    --     return "http://localhost:5050"
-    --   end,
-    -- },
-    -- cwd = function()
-    --   -- todo: request input from ui
-    --   return vim.fn.getcwd()
-    -- end,
+    type = "coreclr",
+    name = "Launch (.NET) - netcoredbg",
+    request = "launch",
+    program = pick_dll,
+    cwd = "${workspaceFolder}",
+    console = "integratedTerminal",
+    stopAtEntry = false,
+    justMyCode = true,
+  },
+  {
+    type = "coreclr",
+    name = "Attach (.NET) - pick process",
+    request = "attach",
+    processId = require("dap.utils").pick_process,
   },
 }
 
-local map = vim.keymap.set
+-- Keymaps (minimal + usable)
+vim.keymap.set("n", "<F5>", function() dap.continue() end, { desc = "DAP Continue" })
+vim.keymap.set("n", "<F10>", function() dap.step_over() end, { desc = "DAP Step Over" })
+vim.keymap.set("n", "<F11>", function() dap.step_into() end, { desc = "DAP Step Into" })
+vim.keymap.set("n", "<F12>", function() dap.step_out() end, { desc = "DAP Step Out" })
+vim.keymap.set("n", "<leader>db", function() dap.toggle_breakpoint() end, { desc = "DAP Toggle Breakpoint" })
+vim.keymap.set("n", "<leader>dB", function()
+  dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
+end, { desc = "DAP Conditional Breakpoint" })
+vim.keymap.set("n", "<leader>dr", function() dap.repl.open() end, { desc = "DAP REPL" })
+vim.keymap.set("n", "<leader>dl", function() dap.run_last() end, { desc = "DAP Run Last" })
 
-local opts = { noremap = true, silent = true }
-
-map('n', '<F5>', "<Cmd>lua require'dap'.continue()<CR>", opts)
-map('n', '<F6>', "<Cmd>lua require('neotest').run.run({strategy = 'dap'})<CR>", opts)
-map('n', '<F9>', "<Cmd>lua require'dap'.toggle_breakpoint()<CR>", opts)
-map('n', '<F10>', "<Cmd>lua require'dap'.step_over()<CR>", opts)
-map('n', '<F11>', "<Cmd>lua require'dap'.step_into()<CR>", opts)
-map('n', '<F8>', "<Cmd>lua require'dap'.step_out()<CR>", opts)
--- map("n", "<F12>", "<Cmd>lua require'dap'.step_out()<CR>", opts)
-map('n', '<leader>dr', "<Cmd>lua require'dap'.repl.open()<CR>", opts)
-map('n', '<leader>dl', "<Cmd>lua require'dap'.run_last()<CR>", opts)
-map('n', '<leader>dt', "<Cmd>lua require('neotest').run.run({strategy = 'dap'})<CR>", { noremap = true, silent = true, desc = 'debug nearest test' })

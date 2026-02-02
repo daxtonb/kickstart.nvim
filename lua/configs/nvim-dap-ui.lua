@@ -1,16 +1,18 @@
-local dapui = require 'dapui'
-local dap = require 'dap'
+local dap = require("dap")
+local dapui = require("dapui")
 
---- open ui immediately when debugging starts
-dap.listeners.after.event_initialized['dapui_config'] = function()
+dapui.setup()
+
+-- Auto-open/close the UI
+dap.listeners.after.event_initialized["dapui_config"] = function()
   dapui.open()
 end
-dap.listeners.before.event_terminated['dapui_config'] = function()
+dap.listeners.before.event_terminated["dapui_config"] = function()
   dapui.close()
 end
-dap.listeners.before.event_exited['dapui_config'] = function()
+dap.listeners.before.event_exited["dapui_config"] = function()
   dapui.close()
 end
 
--- default configuration
-dapui.setup()
+vim.keymap.set("n", "<leader>du", function() dapui.toggle() end, { desc = "DAP UI Toggle" })
+

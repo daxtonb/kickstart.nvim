@@ -116,7 +116,7 @@ vim.o.showmode = false
 --  See `:help 'clipboard'`
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
-  if vim.fn.has('wsl') == 1 and vim.fn.executable('clip.exe') == 1 then
+  if vim.fn.has 'wsl' == 1 and vim.fn.executable 'clip.exe' == 1 then
     vim.g.clipboard = {
       name = 'win_clipboard',
       copy = {
@@ -129,7 +129,6 @@ vim.schedule(function()
       },
       cache_enabled = 0,
     }
-
   else
     -- Default to system clipboard for non-WSL environments
     vim.g.clipboard = nil
@@ -897,6 +896,29 @@ require('lazy').setup({
           },
         },
         pyright = {},
+        -- JS/TS (typescript-language-server)
+        ts_ls = {
+          -- optional: if you want explicit filetypes
+          filetypes = {
+            'javascript',
+            'javascriptreact',
+            'javascript.jsx',
+            'typescript',
+            'typescriptreact',
+            'typescript.tsx',
+          },
+          -- recommended if you use a separate formatter like prettier/conform
+          on_attach = function(client)
+            client.server_capabilities.documentFormattingProvider = false
+            client.server_capabilities.documentRangeFormattingProvider = false
+          end,
+        },
+        eslint = {
+          -- optional: helps monorepos; safe default
+          settings = {
+            workingDirectory = { mode = 'auto' },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
