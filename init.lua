@@ -1308,6 +1308,9 @@ require('lazy').setup({
           end
         )
       end
+      
+      -- Re-register the command with the patched function
+      vim.api.nvim_create_user_command("GHApproveReview", pr.immediately_approve_review, {})
     end,
   },
 
