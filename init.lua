@@ -1245,6 +1245,20 @@ require('lazy').setup({
     },
     config = function()
       require('litee.gh').setup()
+      
+      -- Patch for gh.nvim create_comment nil args bug
+      -- See: https://github.com/ldelossa/gh.nvim/issues/XXX
+      local diff_view = require('litee.gh.pr.diff_view')
+      local original_create_comment = diff_view.create_comment
+      diff_view.create_comment = function(args)
+        if args == nil then
+          args = {}
+          local cur_win = vim.api.nvim_get_current_win()
+          args.line1 = vim.api.nvim_win_get_cursor(cur_win)[1]
+          args.line2 = args.line1
+        end
+        return original_create_comment(args)
+      end
     end,
   },
 
