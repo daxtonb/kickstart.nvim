@@ -1346,6 +1346,12 @@ require('lazy').setup({
       require('auto-session').setup()
     end,
   },
+  { 
+    'karb94/neoscroll.nvim',
+    config = function()
+      require('neoscroll').setup()
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
