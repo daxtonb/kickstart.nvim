@@ -1164,7 +1164,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     -- Treesitter uses the `config` entrypoint for setup.
-    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    main = 'nvim-treesitter.config', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'c_sharp' },
@@ -1259,9 +1259,22 @@ require('lazy').setup({
         return original_create_comment(args)
       end
       
-      -- Note: Patches for nil review bug are applied directly to the plugin source file
-      -- at ~/.local/share/nvim/lazy/gh.nvim/lua/litee/gh/pr/init.lua
-      -- If the plugin updates and overwrites these changes, you'll need to reapply them
+      -- Patch for gh.nvim submit review comment quoting bug.
+      -- gh.nvim shellescapes review comments but executes gh without a shell,
+      -- so single quotes become literal text in submitted reviews.
+      local ghcli = require 'litee.gh.ghcli'
+      if not ghcli._submit_review_unescape_patch then
+        local original_submit_review = ghcli.submit_review
+        ghcli.submit_review = function(pull_number, review_id, body, event)
+          if type(body) == 'string' and body:sub(1, 1) == "'" and body:sub(-1, -1) == "'" then
+            body = body:sub(2, -2)
+            body = body:gsub("'\\''", "'")
+            body = body:gsub("'\"'\"'", "'")
+          end
+          return original_submit_review(pull_number, review_id, body, event)
+        end
+        ghcli._submit_review_unescape_patch = true
+      end
     end,
   },
 
