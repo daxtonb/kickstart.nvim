@@ -300,7 +300,7 @@ end, { desc = 'Toggle terminal' })
 
 -- Start terminal in insert mode
 vim.api.nvim_create_autocmd('TermOpen', {
-  pattern = '*',
+  pattern = 'term://*',
   command = 'startinsert',
 })
 
@@ -1304,7 +1304,7 @@ require('lazy').setup({
         },
       },
     },
-    lazy = false, -- neo-tree will lazily load itself
+    lazy = true,
   },
 
   {
