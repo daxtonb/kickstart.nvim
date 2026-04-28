@@ -759,13 +759,15 @@ require('lazy').setup({
           --  the definition of its *type*, not where it was *defined*.
           map('gt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
-          -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
+          -- This function resolves a difference between neovim versions (0.10, 0.11, and 0.12)
           ---@param client vim.lsp.Client
           ---@param method vim.lsp.protocol.Method
           ---@param bufnr? integer some lsp support methods only in specific files
           ---@return boolean
           local function client_supports_method(client, method, bufnr)
-            if vim.fn.has 'nvim-0.11' == 1 then
+            if vim.fn.has 'nvim-0.12' == 1 then
+              return client.supports_method(method, bufnr)
+            elseif vim.fn.has 'nvim-0.11' == 1 then
               return client:supports_method(method, bufnr)
             else
               return client.supports_method(method, { bufnr = bufnr })
@@ -813,7 +815,6 @@ require('lazy').setup({
 
           -- C#
           if client and client.name == 'roslyn' then
-            vim.lsp.config('roslyn', {})
             require('neotest').setup {
               adapters = {
                 require 'neotest-dotnet',
@@ -1164,7 +1165,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     -- Treesitter uses the `config` entrypoint for setup.
-    main = 'nvim-treesitter.config', -- Sets main module to use for opts
+    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
       ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'c_sharp' },
@@ -1263,7 +1264,15 @@ require('lazy').setup({
       { '<leader>gh', '<cmd>GH<cr>', desc = 'Open gh.nvim' },
     },
     config = function()
-      require('litee.gh').setup()
+      require('litee.gh').setup {
+        -- Disable auto-refresh to prevent rate limiting
+        -- Refresh manually with :GHRefresh when needed
+        refresh_interval = 0, -- 0 disables the timer
+      }
+
+      -- Disable the auto-refresh timer
+      local gh = require 'litee.gh'
+      gh.stop_refresh_timer()
 
       -- Patch for gh.nvim create_comment nil args bug
       local diff_view = require 'litee.gh.pr.diff_view'
@@ -1299,6 +1308,7 @@ require('lazy').setup({
 
   {
     'sindrets/diffview.nvim',
+    lazy = false,
     dependencies = { 'nvim-lua/plenary.nvim' },
     keys = {
       { '<leader>dvh', '<cmd>DiffviewOpen HEAD<cr>', desc = 'Open [D]iff[V]iew [H]EAD' },
