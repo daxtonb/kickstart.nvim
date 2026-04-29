@@ -1308,7 +1308,29 @@ require('lazy').setup({
     dependencies = { 'nvim-lua/plenary.nvim' },
     keys = {
       { '<leader>dvh', '<cmd>DiffviewOpen HEAD<cr>', desc = 'Open [D]iff[V]iew [H]EAD' },
-      { '<leader>dvm', '<cmd>DiffviewOpen origin/master<cr>', desc = 'Open [D]iff[V]iew [M]aster' },
+      {
+        '<leader>dvd',
+        function()
+          local default_branch = vim.fn.systemlist(
+            "git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'"
+          )[1]
+
+          if not default_branch or default_branch == '' then
+            -- fallback for repos where origin/HEAD is missing
+            if vim.fn.system("git show-ref --verify --quiet refs/remotes/origin/main") == '' then
+              default_branch = 'main'
+            elseif vim.fn.system("git show-ref --verify --quiet refs/remotes/origin/master") == '' then
+              default_branch = 'master'
+            else
+              vim.notify('Could not determine default branch', vim.log.levels.WARN)
+              return
+            end
+          end
+
+          vim.cmd('DiffviewOpen origin/' .. default_branch)
+        end,
+        desc = 'Open [D]iff[V]iew [D]efault branch',
+      },
     },
   },
 
