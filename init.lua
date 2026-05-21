@@ -115,8 +115,8 @@ vim.o.showmode = false
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
 vim.schedule(function()
-  vim.o.clipboard = 'unnamedplus'
   if vim.fn.has 'wsl' == 1 and vim.fn.executable 'clip.exe' == 1 then
+    vim.o.clipboard = 'unnamedplus'
     vim.g.clipboard = {
       name = 'win_clipboard',
       copy = {
@@ -130,8 +130,49 @@ vim.schedule(function()
       cache_enabled = 0,
     }
   else
-    -- Default to system clipboard for non-WSL environments
-    vim.g.clipboard = nil
+    local has_display = vim.env.DISPLAY and vim.env.DISPLAY ~= ''
+    local has_xclip = vim.fn.executable 'xclip' == 1
+    local has_xsel = vim.fn.executable 'xsel' == 1
+
+    if has_display and has_xclip then
+      vim.o.clipboard = 'unnamedplus'
+      vim.g.clipboard = {
+        name = 'xclip',
+        copy = {
+          ['+'] = 'xclip -quiet -i -selection clipboard',
+          ['*'] = 'xclip -quiet -i -selection primary',
+        },
+        paste = {
+          ['+'] = 'xclip -o -selection clipboard',
+          ['*'] = 'xclip -o -selection primary',
+        },
+        cache_enabled = 1,
+      }
+    elseif has_display and has_xsel then
+  vim.o.clipboard = 'unnamedplus'
+      vim.g.clipboard = {
+        name = 'xsel',
+        copy = {
+          ['+'] = 'xsel --clipboard --input',
+          ['*'] = 'xsel --primary --input',
+        },
+        paste = {
+          ['+'] = 'xsel --clipboard --output',
+          ['*'] = 'xsel --primary --output',
+        },
+        cache_enabled = 1,
+      }
+    else
+      -- Keep Neovim's registers working, but don't pretend OS clipboard sync is available.
+      vim.g.clipboard = nil
+      vim.o.clipboard = ''
+      vim.schedule(function()
+        vim.notify(
+          "System clipboard not available: install 'xclip' (or 'xsel') and ensure $DISPLAY is set.",
+          vim.log.levels.WARN
+        )
+      end)
+    end
   end
 end)
 
@@ -1165,7 +1206,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = function()
       require('nvim-treesitter').setup()
-      require('nvim-treesitter').install({ 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'c_sharp' })
+      require('nvim-treesitter').install { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'c_sharp' }
     end,
     config = function()
       -- Enable treesitter highlighting (Neovim 0.12+)
@@ -1311,15 +1352,13 @@ require('lazy').setup({
       {
         '<leader>dvd',
         function()
-          local default_branch = vim.fn.systemlist(
-            "git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'"
-          )[1]
+          local default_branch = vim.fn.systemlist("git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'")[1]
 
           if not default_branch or default_branch == '' then
             -- fallback for repos where origin/HEAD is missing
-            if vim.fn.system("git show-ref --verify --quiet refs/remotes/origin/main") == '' then
+            if vim.fn.system 'git show-ref --verify --quiet refs/remotes/origin/main' == '' then
               default_branch = 'main'
-            elseif vim.fn.system("git show-ref --verify --quiet refs/remotes/origin/master") == '' then
+            elseif vim.fn.system 'git show-ref --verify --quiet refs/remotes/origin/master' == '' then
               default_branch = 'master'
             else
               vim.notify('Could not determine default branch', vim.log.levels.WARN)
@@ -1352,6 +1391,9 @@ require('lazy').setup({
       },
     },
     lazy = true,
+    keys = {
+      { '<leader>e', '<cmd>Neotree toggle<cr>', desc = 'Toggle [E]xplorer' },
+    },
   },
 
   {
