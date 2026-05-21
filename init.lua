@@ -689,7 +689,6 @@ require('lazy').setup({
             'eslint-lsp',
             'typescript-language-server',
             'json-lsp',
-            'clangd',
             'rust-analyzer',
 
             -- !
@@ -910,7 +909,13 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        -- Use the system clangd on NixOS instead of Mason's downloaded binary.
         clangd = {},
+        -- Dart's LSP ships with the Dart SDK. Keep it outside Mason so
+        -- aarch64 hosts can use the system SDK instead of an unavailable package.
+        dartls = {
+          cmd = { 'dart', 'language-server', '--protocol=lsp' },
+        },
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
@@ -976,7 +981,27 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
+      local externally_installed_servers = {
+        clangd = true,
+        dartls = true,
+      }
+
+      local function setup_server(server_name)
+        local server = servers[server_name] or {}
+        -- This handles overriding only values explicitly passed
+        -- by the server configuration above. Useful when disabling
+        -- certain features of an LSP (for example, turning off formatting for ts_ls)
+        server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        require('lspconfig')[server_name].setup(server)
+      end
+
+      for server_name, _ in pairs(externally_installed_servers) do
+        setup_server(server_name)
+      end
+
+      local ensure_installed = vim.tbl_filter(function(server_name)
+        return not externally_installed_servers[server_name]
+      end, vim.tbl_keys(servers or {}))
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
       })
@@ -987,12 +1012,9 @@ require('lazy').setup({
         automatic_installation = false,
         handlers = {
           function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+            if not externally_installed_servers[server_name] then
+              setup_server(server_name)
+            end
           end,
         },
       }
