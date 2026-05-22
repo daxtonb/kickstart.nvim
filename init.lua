@@ -1476,6 +1476,19 @@ require('lazy').setup({
       require('neoscroll').setup()
     end,
   },
+  {
+    "OXY2DEV/markview.nvim",
+    lazy = false,
+    -- Completion for `blink.cmp`
+    -- dependencies = { "saghen/blink.cmp" },
+  },
+  {
+      "iamcco/markdown-preview.nvim",
+      cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+      ft = { "markdown" },
+      build = "cd app && npm install",
+      init = function() vim.g.mkdp_browser = "firefox" end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
