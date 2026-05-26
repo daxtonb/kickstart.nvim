@@ -1235,7 +1235,7 @@ require('lazy').setup({
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'bash', 'c', 'diff', 'html', 'lua', 'markdown', 'vim', 'cs' },
         callback = function()
-          vim.treesitter.start()
+          pcall(vim.treesitter.start)
         end,
       })
     end,
@@ -1333,18 +1333,6 @@ require('lazy').setup({
       local gh = require 'litee.gh'
       gh.stop_refresh_timer()
 
-      -- Patch for gh.nvim create_comment nil args bug
-      local diff_view = require 'litee.gh.pr.diff_view'
-      local original_create_comment = diff_view.create_comment
-      diff_view.create_comment = function(args)
-        if args == nil then
-          args = {}
-          local cur_win = vim.api.nvim_get_current_win()
-          args.line1 = vim.api.nvim_win_get_cursor(cur_win)[1]
-          args.line2 = args.line1
-        end
-        return original_create_comment(args)
-      end
 
       -- Patch for gh.nvim submit review comment quoting bug.
       -- gh.nvim shellescapes review comments but executes gh without a shell,
@@ -1462,7 +1450,13 @@ require('lazy').setup({
     },
   },
 
-  { 'github/copilot.vim' },
+  {
+    'github/copilot.vim',
+    init = function()
+      -- Use the bundled language-server.js instead of downloading via npx each startup
+      vim.g.copilot_npx_command = false
+    end,
+  },
 
   {
     'rmagatti/auto-session',
