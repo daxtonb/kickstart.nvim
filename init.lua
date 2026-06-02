@@ -1461,6 +1461,9 @@ require('lazy').setup({
   {
     'rmagatti/auto-session',
     config = function()
+      -- Exclude terminal buffers from sessions so TermOpen+startinsert doesn't
+      -- fire on restore and drop Neovim into Insert Mode at startup.
+      vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize'
       require('auto-session').setup()
     end,
   },
@@ -1481,7 +1484,13 @@ require('lazy').setup({
       cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
       ft = { "markdown" },
       build = "cd app && npm install",
-      init = function() vim.g.mkdp_browser = "firefox" end,
+      init = function()
+      if vim.fn.has 'wsl' ~= 1 then
+        vim.g.mkdp_browser = 'firefox'
+      end
+      -- In WSL, leave mkdp_browser unset so the plugin uses cmd.exe /c start,
+      -- which opens the default Windows browser directly.
+    end,
   },
 }, {
   ui = {
