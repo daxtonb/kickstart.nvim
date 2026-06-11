@@ -988,11 +988,9 @@ require('lazy').setup({
 
       local function setup_server(server_name)
         local server = servers[server_name] or {}
-        -- This handles overriding only values explicitly passed
-        -- by the server configuration above. Useful when disabling
-        -- certain features of an LSP (for example, turning off formatting for ts_ls)
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-        require('lspconfig')[server_name].setup(server)
+        vim.lsp.config(server_name, server)
+        vim.lsp.enable(server_name)
       end
 
       for server_name, _ in pairs(externally_installed_servers) do
@@ -1333,6 +1331,21 @@ require('lazy').setup({
       local gh = require 'litee.gh'
       gh.stop_refresh_timer()
 
+
+      -- Patch for gh.nvim GHCreateThread nil args bug.
+      -- command_select() calls cmd.callback() with no args, but create_comment
+      -- expects a Neovim range args table {line1, line2}. Fall back to cursor line.
+      local dv = require 'litee.gh.pr.diff_view'
+      if not dv._create_comment_args_patch then
+        local original_create_comment = dv.create_comment
+        dv.create_comment = function(args)
+          if args == nil then
+            args = { line1 = vim.fn.line '.', line2 = vim.fn.line '.' }
+          end
+          return original_create_comment(args)
+        end
+        dv._create_comment_args_patch = true
+      end
 
       -- Patch for gh.nvim submit review comment quoting bug.
       -- gh.nvim shellescapes review comments but executes gh without a shell,
