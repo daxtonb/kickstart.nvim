@@ -179,6 +179,12 @@ end)
 -- Enable break indent
 vim.o.breakindent = true
 
+-- Use spaces for indentation, with <Tab> inserting two spaces.
+vim.o.expandtab = true
+vim.o.shiftwidth = 2
+vim.o.softtabstop = 2
+vim.o.tabstop = 2
+
 -- Save undo history
 vim.o.undofile = true
 
@@ -228,8 +234,9 @@ vim.o.confirm = true
 vim.api.nvim_create_autocmd({ 'FileType' }, {
   pattern = { 'cs' },
   callback = function()
-    vim.bo.shiftwidth = 4
-    vim.bo.tabstop = 4
+    vim.bo.shiftwidth = 2
+    vim.bo.softtabstop = 2
+    vim.bo.tabstop = 2
     vim.bo.expandtab = true
   end,
 })
