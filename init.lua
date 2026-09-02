@@ -1377,8 +1377,28 @@ require('lazy').setup({
     'sindrets/diffview.nvim',
     lazy = false,
     dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = {
+      view = {
+        -- Three-way split used when resolving merge conflicts:
+        -- OURS | RESULT | THEIRS, with the working copy in the middle.
+        merge_tool = {
+          layout = 'diff3_horizontal',
+          disable_diagnostics = true, -- conflict markers make LSP noisy
+          winbar_info = true, -- label which revision each window holds
+        },
+      },
+      keymaps = {
+        view = {
+          { 'n', '<leader>cq', '<cmd>DiffviewClose<cr>', { desc = 'Close diffview' } },
+        },
+        file_panel = {
+          { 'n', '<leader>cq', '<cmd>DiffviewClose<cr>', { desc = 'Close diffview' } },
+        },
+      },
+    },
     keys = {
       { '<leader>dvh', '<cmd>DiffviewOpen HEAD<cr>', desc = 'Open [D]iff[V]iew [H]EAD' },
+      { '<leader>dvm', '<cmd>DiffviewOpen<cr>', desc = 'Open [D]iff[V]iew [M]erge conflicts' },
       {
         '<leader>dvd',
         function()
