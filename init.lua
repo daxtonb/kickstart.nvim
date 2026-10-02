@@ -329,6 +329,45 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<leader>wv', '<C-w>v', { desc = 'New [W]indow–[V]ertical split' })
 vim.keymap.set('n', '<leader>wh', '<C-w>n', { desc = 'New [W]indow–[H]orizontal split' })
 
+-- Copy a GitHub permalink for the current line (or Visual selection) to the clipboard
+vim.keymap.set({ 'n', 'v' }, '<leader>gy', function()
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if bufname == '' then
+    vim.notify('No file in buffer', vim.log.levels.WARN)
+    return
+  end
+
+  local mode = vim.fn.mode()
+  local start_line, end_line
+  if mode == 'v' or mode == 'V' or mode == '\22' then
+    start_line, end_line = vim.fn.line 'v', vim.fn.line '.'
+    if start_line > end_line then
+      start_line, end_line = end_line, start_line
+    end
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', false)
+  else
+    start_line, end_line = vim.fn.line '.', vim.fn.line '.'
+  end
+
+  local filename = vim.fn.fnamemodify(bufname, ':t')
+  local dir = vim.fn.fnamemodify(bufname, ':h')
+
+  -- Run from the buffer's own directory so `gh` resolves the repo-relative path correctly
+  local result = vim.system({ 'gh', 'browse', '-n', filename .. ':' .. start_line }, { cwd = dir, text = true }):wait()
+  if result.code ~= 0 then
+    vim.notify('gh browse failed: ' .. vim.trim(result.stderr or ''), vim.log.levels.ERROR)
+    return
+  end
+
+  local url = vim.trim(result.stdout)
+  if end_line > start_line then
+    url = url:gsub('#L(%d+)$', '#L%1-L' .. end_line)
+  end
+
+  vim.fn.setreg('+', url)
+  vim.notify('Copied GitHub link: ' .. url)
+end, { desc = '[G]itHub [Y]ank link to current line/selection' })
+
 -- Reusable terminal shortcut
 local term_buf = nil
 
