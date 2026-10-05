@@ -368,6 +368,19 @@ vim.keymap.set({ 'n', 'v' }, '<leader>gy', function()
   vim.notify('Copied GitHub link: ' .. url)
 end, { desc = '[G]itHub [Y]ank link to current line/selection' })
 
+-- Copy the absolute path of the file in the current buffer to the clipboard
+vim.keymap.set('n', '<leader>yp', function()
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if bufname == '' then
+    vim.notify('No file in buffer', vim.log.levels.WARN)
+    return
+  end
+
+  local path = vim.fn.fnamemodify(bufname, ':p')
+  vim.fn.setreg('+', path)
+  vim.notify('Copied path: ' .. path)
+end, { desc = '[Y]ank file [P]ath' })
+
 -- Reusable terminal shortcut
 local term_buf = nil
 
