@@ -1422,6 +1422,28 @@ require('lazy').setup({
         end
         ghcli._submit_review_unescape_patch = true
       end
+
+      -- Patch for gh.nvim stale remote bug.
+      -- With git_protocol=https, gh.nvim embeds the gh auth token in the PR
+      -- remote URL and looks the remote up by exact URL. After the token
+      -- rotates, the lookup misses and `git remote add litee-gh_<owner>/<repo>`
+      -- fails because that name already exists ("Failed to add remote git
+      -- repository"). If the name is taken, point it at the new URL instead.
+      local gitcli = require 'litee.gh.gitcli'
+      if not gitcli._add_remote_set_url_patch then
+        local original_add_remote = gitcli.add_remote
+        gitcli.add_remote = function(name, remote_url)
+          if vim.tbl_contains(gitcli.list_remotes() or {}, name) then
+            vim.fn.system { 'git', 'remote', 'set-url', name, remote_url }
+            if vim.v.shell_error ~= 0 then
+              return nil
+            end
+            return ''
+          end
+          return original_add_remote(name, remote_url)
+        end
+        gitcli._add_remote_set_url_patch = true
+      end
     end,
   },
 
