@@ -115,7 +115,30 @@ vim.o.showmode = false
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
 vim.schedule(function()
-  if vim.fn.has 'wsl' == 1 and vim.fn.executable 'clip.exe' == 1 then
+  local is_remote = (vim.env.SSH_CONNECTION or '') ~= '' or (vim.env.SSH_TTY or '') ~= ''
+  if is_remote then
+    -- Over SSH/mosh the Windows clipboard is unreachable (clip.exe: "Access is
+    -- denied") and not the one you want anyway. Copy via OSC 52 to the client
+    -- terminal's clipboard (tmux forwards it with set-clipboard on). Paste from
+    -- tmux's buffer, which OSC 52 copies also land in; terminals rarely allow
+    -- OSC 52 reads. Use the terminal's own paste (Cmd-V) for client-side text.
+    local osc52 = require 'vim.ui.clipboard.osc52'
+    local paste
+    if (vim.env.TMUX or '') ~= '' then
+      paste = function()
+        local out = vim.fn.systemlist { 'tmux', 'save-buffer', '-' }
+        return vim.v.shell_error == 0 and out or { '' }
+      end
+    else
+      paste = osc52.paste '+'
+    end
+    vim.o.clipboard = 'unnamedplus'
+    vim.g.clipboard = {
+      name = 'osc52-remote',
+      copy = { ['+'] = osc52.copy '+', ['*'] = osc52.copy '*' },
+      paste = { ['+'] = paste, ['*'] = paste },
+    }
+  elseif vim.fn.has 'wsl' == 1 and vim.fn.executable 'clip.exe' == 1 then
     vim.o.clipboard = 'unnamedplus'
     vim.g.clipboard = {
       name = 'win_clipboard',
