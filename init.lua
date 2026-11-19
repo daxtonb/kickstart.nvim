@@ -791,7 +791,10 @@ require('lazy').setup({
         ---@type RoslynNvimConfig
         ft = { 'cs', 'razor' },
         opts = {
-          -- your configuration comes here; leave empty for default settings
+          -- Neovim doesn't offer LSP file watching on Linux, so Roslyn falls back to
+          -- its in-process .NET FileSystemWatcher, which stack-overflows on WSL.
+          -- 'off' suppresses both; run :LspRestart after external changes (e.g. git checkout).
+          filewatching = 'off',
         },
       },
 
@@ -1590,8 +1593,10 @@ require('lazy').setup({
   {
     'github/copilot.vim',
     init = function()
-      -- Use the bundled language-server.js instead of downloading via npx each startup
-      vim.g.copilot_npx_command = false
+      -- The language server bundled with copilot.vim 1.59.0 (1.408.0) fails to parse
+      -- CAPI's /models response (unknown capability type "decisions"). Pin a newer
+      -- server via npx; an exact version is served from the npx cache after first run.
+      vim.g.copilot_version = '1.572.0'
     end,
   },
 
